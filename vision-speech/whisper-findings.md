@@ -1,10 +1,10 @@
 # Local Speech-to-Text on Apple Silicon: Whisper Accuracy & Failure Modes
 
-**Week 2, Day 4 — Speech** · Krishnagopal Tyagi · 18–19 Aug 2026
+Krishnagopal Tyagi · 18–19 Aug 2026
 Hardware: MacBook Air M3, 16 GB · Runtime: **mlx-whisper** (Apple MLX), model **whisper-large-v3-turbo** (~1.6 GB)
 Setup notes: required `brew install ffmpeg` (audio decoder) and a Python venv (`python3 -m venv ~/ml-env`) — macOS blocks system-wide pip installs (PEP 668).
 
-> **TL;DR:** On clean speech, local Whisper (large-v3-turbo) is ~99% accurate — including on my Indian-English accent, which scored 5/5 on hard GRE vocabulary. Its errors are not mishearings but **hallucinations at audio boundaries**: clipped openings, invented filler words, and a repetition loop on trailing silence. Same law as Weeks 1–2: models fail *fluently*, at the edges, without warning.
+> **TL;DR:** On clean speech, local Whisper (large-v3-turbo) is ~99% accurate — including on my Indian-English accent, which scored 5/5 on hard GRE vocabulary. Its errors are not mishearings but **hallucinations at audio boundaries**: clipped openings, invented filler words, and a repetition loop on trailing silence. Same law as the quantization and vision studies: models fail *fluently*, at the edges, without warning.
 
 ---
 
@@ -30,14 +30,26 @@ Spoken: *"His pragmatic approach helped him ameliorate the problem despite the a
 ## Findings
 
 1. **Local speech-to-text is a solved problem for clean speech.** ~99% accuracy on a laptop, offline, free — including accented English and archaic prose.
-2. **The accent tax on prepared speech is ~zero** (5/5 GRE words). The realistic risks left are spontaneous/fast speech, noise, and code-switching — tested next (Day 5).
+2. **The accent tax on prepared speech is ~zero** (5/5 GRE words). The realistic risks left are spontaneous/fast speech, noise, and code-switching — covered in the stress tests below.
 3. **Whisper's failure mode is hallucination at boundaries, not mishearing in the middle:** clipped starts, invented fillers ("Sure."), and repetition loops on trailing silence. Practical rule: **trim silence from clip edges, and post-filter repeated lines** before trusting a transcript.
-4. **Cross-study pattern (Weeks 1–2):** quantized LLMs (q2) lose reasoning fluently; vision models garble or fabricate text fluently; Whisper hallucinates boundaries fluently. **Every local model so far fails *confidently* — output quality must be measured, never assumed.**
+4. **Cross-study pattern:** quantized LLMs (q2) lose reasoning fluently; vision models garble or fabricate text fluently; Whisper hallucinates boundaries fluently. **Every local model so far fails *confidently* — output quality must be measured, never assumed.**
 
 ## Method notes
 - All runs via `mlx_whisper <file> --model mlx-community/whisper-large-v3-turbo`.
 - Default model is whisper-tiny (74 MB) — deliberately upgraded to turbo for accuracy; tiny-vs-turbo ladder left as future comparison.
-- Transcription speed felt near-real-time or faster; not systematically timed (gap to fix in Day 5 runs).
+- Transcription speed felt near-real-time or faster; not systematically timed (acknowledged gap).
 
-## Pending (Day 5)
-Noisy-background recording · Hindi-English code-switching (Hinglish) · timing measurements → then results merge into `week2-vision-study.md` and push to GitHub.
+## Stress tests (19 Aug)
+
+### Test 4 — Multi-speaker background chatter
+- Locked onto the **dominant voice** and transcribed it coherently ("…Thanksgiving, and then I went up to dinner the day after…") while **omitting** the overlapping crosstalk entirely, skipping stretches of overlap.
+- Failure mode: **omission** — honest degradation; it drops what it can't parse.
+
+### Test 5 — Hindi-English code-switching (Hinglish WhatsApp voice note, low-bitrate opus)
+- Language auto-detect chose "English" for mixed speech.
+- Output was **fabricated fluent nonsense** ("Your new monitor is going to be Sir the Live." / "Please pick an English Driller."), a repetition loop ("I'm a little bit more." ×2), and ~18 s silently skipped.
+- Failure mode: **fabrication** — dishonest degradation; it invents rather than admitting failure. First mitigation to try: force the language (`--language hi`).
+- Note: WhatsApp's aggressive audio compression is itself a variable here.
+
+### Stress-test conclusion
+Whisper's two failure modes mirror the vision study exactly: **noise → omission (honest), code-switching/unclear audio → fabrication (dangerous)**. Fabrication is always the riskier mode because the output *looks* like a successful transcript. Full context in `vision-speech-study.md`, Experiment 4.
