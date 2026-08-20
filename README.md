@@ -1,4 +1,4 @@
-# LLM Lab Notebook — Local Models on Apple Silicon
+# Local LLM Research — Quantization, Vision & Speech on Apple Silicon
 
 **Empirical studies of LLM quantization, vision models, and speech models on a 16 GB MacBook Air (M3)** — August 2026.
 

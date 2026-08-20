@@ -127,7 +127,7 @@ mlx_whisper ~/Downloads/book.ogg --model mlx-community/whisper-large-v3-turbo   
 
 ## 4. Repo layout
 ```
-llm-lab-notebook/
+local-llm-research/
 ├── README.md
 ├── lab-notes.md
 ├── quantization/        (study + transcripts + graphs)
